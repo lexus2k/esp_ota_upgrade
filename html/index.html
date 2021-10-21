@@ -1,0 +1,175 @@
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link rel="stylesheet" href="styles.css">
+<link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+</head>
+<html><body>
+<div class="w3-bar w3-dark-grey">
+  <button class="w3-bar-item w3-button tablink" id="defaultOpen" onclick="openTab(event, 'FwUpdateTab')">Fw Update</button>
+</div>
+<!-- ############ FW update tab ############ -->
+<div id="FwUpdateTab" class="w3-container w3-border tabcontent" style="border:1px solid #000;padding: 12px">
+<form name='upgrade'>
+<br><b>Fw update</b><br>
+<input class="w3-button w3-border w3-blue" type='file' name='file'>
+<progress name='progress' min="0" max="100" value="0" style='display: none;'>0% complete</progress><br>
+<br><input class="w3-button w3-border w3-border-red w3-hover-red" type='button' value='Upgrade' onclick='return on_fw_upload(this.form);'>
+</form>
+</div>
+<script type="text/javascript">
+
+function openTab(evt, tabName) {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+    tablinks = document.getElementsByClassName("tablink");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" w3-blue", "");
+    }
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.className += " w3-blue";
+} 
+
+function httpGet(theUrl, callback)
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "POST", "/param", true );
+    xmlHttp.addEventListener("load", function(e)
+    {
+        if (this.status == 200) {
+            callback(this.responseText);
+        };
+    } );
+    xmlHttp.send( theUrl );
+}
+
+function httpGetNoWait(theUrl)
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "POST", "/param", true );
+    xmlHttp.send( theUrl );
+}
+
+function on_fw_upload(form)
+{
+  var fr = new FileReader();
+  fr.onload = function()
+  {
+    console.log(fr.result);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/fwupdate', true);
+    // Listen to the upload progress.
+    var progressBar = document.querySelector('progress');
+    progressBar.style.visibility = true;
+    progressBar.style.display = '';
+    progressBar.value = 0;
+    progressBar.textContent = progressBar.value;
+    xhr.addEventListener("load", function(e)
+    {
+        if (this.status == 200) {
+            alert("The clock is being rebooted...");
+        } else {
+            alert("Flash failed: " + this.responseText);
+        };
+    } );
+    xhr.addEventListener("error", function(e)
+    {
+        alert("Request failed");
+    } );
+    xhr.upload.onprogress = function(e)
+    {
+        if (e.lengthComputable)
+        {
+            progressBar.value = (e.loaded / e.total) * 100;
+            progressBar.textContent = progressBar.value; // Fallback for unsupported browsers.
+        }
+    };                                                  	
+
+    xhr.send(fr.result);
+  }
+  fr.readAsArrayBuffer(form.file.files[0]);
+  return true;
+}
+
+function send_color(val)
+{
+    httpGetNoWait( "name=color&value=" + val);
+}
+
+function onupdate_nm(elem)
+{
+    if (elem.checked)
+        httpGetNoWait( "name=night_mode&value=on" );
+    else
+        httpGetNoWait( "name=night_mode&value=off" );
+}
+
+function onupdate_ta(elem)
+{
+    if (elem.checked)
+        httpGetNoWait( "name=time_auto&value=on" );
+    else
+        httpGetNoWait( "name=time_auto&value=off" );
+}
+
+function onupdate_ba(elem)
+{
+    if (elem.checked)
+        httpGetNoWait( "name=br_auto&value=on" );
+    else
+        httpGetNoWait( "name=br_auto&value=off" );
+}
+
+function onupdate_color(val, need_send)
+{
+    document.getElementById('red').value = parseInt(val.substr(1,2), 16);
+    document.getElementById('green').value = parseInt(val.substr(3,2),16);
+    document.getElementById('blue').value = parseInt(val.substr(5,2),16);
+    if (need_send) send_color(val);
+}
+
+function onupdate_channel(channel, value)
+{
+    var hex = Number(value).toString(16);
+    if (hex.length == 1) hex = "0" + hex;
+    var cur_color = document.getElementById('color').value;
+    var new_color = cur_color.substr(0, 1 + channel*2) + hex + cur_color.substr(1 + (channel + 1)*2);
+    document.getElementById('color').value = new_color;
+    send_color(new_color);
+}
+
+function load_settings_data()
+{
+    httpGetNoWait( "name=revert");
+    setTimeout(function() { location.reload(); }, 500);
+    return true;
+}
+
+function commit_settings_data()
+{
+    httpGet( "name=apply&value=true", function(v) {
+       document.getElementById('saved_modal').style.display='block'; } );
+    return true;
+}
+
+function load_wifi_data()
+{
+    httpGetNoWait( "name=revert");
+    setTimeout(function() { location.reload(); }, 500);
+    return true;
+}
+
+function commit_wifi_data()
+{
+    httpGet( "name=apply_wifi&value=true", function(v) {
+       document.getElementById('saved_wifi_modal').style.display='block'; } );
+    return true;
+}
+
+document.getElementById("defaultOpen").click();
+
+</script>
+</body></html>
