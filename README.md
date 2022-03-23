@@ -6,6 +6,9 @@ Improved ESP OTA Upgrade component
 
 ## How to add FW upgrade function to your web-server on the IoT device
 
+![image](https://user-images.githubusercontent.com/16983230/159657446-a23b0caa-f3f0-4737-b708-0d643c55d1e4.png)
+
+
 ```.cpp
 
 
